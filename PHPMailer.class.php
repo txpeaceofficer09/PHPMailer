@@ -14,6 +14,18 @@ class PHPMailer {
 		$this->from = $from;
 	}
 	
+	private function readStream($socket) {
+		$retVal = "";
+		$i = 0;
+
+		while (substr($retVal, strlen($retVal)-1, 1) != "\n" && $i < 512) {
+			$retVal .= fgets($socket, 4);
+			$i++;
+		}
+
+		return $retVal;
+	}
+	
 	public function send($to, $subject, $message) {
 		$retVal = false;
 
@@ -31,9 +43,13 @@ class PHPMailer {
 		];
 		
 		if ($fp=pfsockopen($this->host, $this->port, $errno, $errstr, 0.02)) {
+			// echo "[RECV]: ".$this->readStream($fp);
 			foreach ($cmds AS $cmd) {
 				fputs($fp, $cmd);
+				// echo "[SEND]: ".$cmd."\n";
 				$result = fgets($fp, 2048);
+				// $result = $this->readStream($fp);
+				// echo "[RECV]: ".$result;
 				if ( strstr($result, "Queued mail for delivery") !== false) $retVal = true;
 			}
 			fclose($fp);
