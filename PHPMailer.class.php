@@ -37,8 +37,8 @@ class PHPMailer {
 	private function read() { // Function to read response from last command send to server.
 		$retVal = "";
 
-		while (substr($retVal, strlen($retVal)-1)) {
-			$retVal .= fgets($this->stream, 4);
+		while (substr($retVal, strlen($retVal)-1) != "\n") { // While last byte of $retVal is not a line feed, do...
+			$retVal .= fgets($this->stream, 4); // Read 4 bytes from stream and append to $retVal.
 		}
 
 		return $retVal; // Return our results.
@@ -68,9 +68,7 @@ class PHPMailer {
 			foreach ($cmds AS $cmd) { // Iterate through our list of commands to send to the mail server in order.
 				$this->write($cmd); // Send a command to the server.
 				$result = $this->read(); // Get the server's response to our command.
-				if ( stripos($result, "250 2.6.0") !== false ) $retVal = true; // If the server responds with a '250 2.6.0' message (no matter what the wording of the response) that is a mail queued for delivery message and that means success so set our return value to true.
-				if ( stripos($result, "Queued mail for delivery") !== false) $retVal = true; // If the server responds with a message containing 'Queued mail for delivery' that is a success, so set the return value to true.
-				if ( stripos($result, "queued as") !== false ) $retVal = true; // If the server responds with a message containing 'queued as' that is a success, so set the return value to true.
+				if ( trim($cmd) == 'QUIT' && stripos($result, "250 2.6.0") !== false ) $retVal = true; // If the server responds with a '250 2.6.0' message after we send the QUIT command, we know the message was queued for sending successfully.
 			}
 			$this->close(); // Close the connection to the mail server.
 		}
